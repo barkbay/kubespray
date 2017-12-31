@@ -20,6 +20,7 @@ kube_users_dir: "{{ kube_config_dir }}/users"
 kube_api_anonymous_auth: true
 
 ## Change this to use another Kubernetes version, e.g. a current beta release
+hyperkube_image_repo: 192.168.56.1:5000/coreos/hyperkube
 kube_version: v1.9.2
 
 # Where the binaries will be downloaded.
@@ -87,7 +88,7 @@ weave_peers: uninitialized
 weave_mtu: 1376
 
 # Enable kubernetes network policies
-enable_network_policy: false
+enable_network_policy: true
 
 # Kubernetes internal network for services, unused block of space.
 kube_service_addresses: 10.233.0.0/18
@@ -140,7 +141,7 @@ docker_daemon_graph: "/var/lib/docker"
 ## An obvious use case is allowing insecure-registry access
 ## to self hosted registries like so:
 
-docker_options: "--insecure-registry={{ kube_service_addresses }} --graph={{ docker_daemon_graph }}  {{ docker_log_opts }}"
+docker_options: "--insecure-registry={{ kube_service_addresses }} --insecure-registry=192.168.56.1:5000 --graph={{ docker_daemon_graph }}  {{ docker_log_opts }}"
 docker_bin_dir: "/usr/bin"
 
 # Settings for containerized control plane (etcd/kubelet/secrets)
