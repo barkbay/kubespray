@@ -1,5 +1,5 @@
 ---
-
+# ansible-playbook -i inventory/local/hosts.ini --flush-cache -b -u vagrant mmo.yml -t prometheus
 - hosts: k8s-cluster
   any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
   gather_facts: false
