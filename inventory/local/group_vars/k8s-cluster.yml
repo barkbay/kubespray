@@ -37,8 +37,12 @@ pod_infra_image_repo: "192.168.56.1:5000/google_containers/pause-amd64"
 kubedns_image_repo: "192.168.56.1:5000/google_containers/k8s-dns-kube-dns-amd64"
 
 etcd_image_repo: "192.168.56.1:5000/coreos/etcd"
+
+calico_node_image_repo: "192.168.56.1:5000/calico/node"
+calico_policy_image_repo: "192.168.56.1:5000/calico/kube-controllers"
 calicoctl_image_repo: "192.168.56.1:5000/calico/ctl"
 calico_cni_image_repo: "192.168.56.1:5000/calico/cni"
+calico_rr_image_repo: "192.168.56.1:5000/calico/routereflector"
 
 contiv_image_repo: "192.168.56.1:5000/contiv/netplugin"
 contiv_auth_proxy_image_repo: "192.168.56.1:5000/contiv/auth_proxy"
@@ -87,7 +91,7 @@ kube_users:
 # Choose network plugin (calico, contiv, weave or flannel)
 # Can also be set to 'cloud', which lets the cloud provider setup appropriate routing
 #kube_network_plugin: calico
-kube_network_plugin: contiv
+kube_network_plugin: calico
 
 # weave's network password for encryption
 # if null then no network encryption
