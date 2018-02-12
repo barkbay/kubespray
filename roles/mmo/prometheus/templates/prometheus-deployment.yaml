@@ -1,0 +1,79 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: prometheus-deployment
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      name: prometheus
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: 192.168.56.1:5000/prom/prometheus:v2.1.0
+        args:
+          - --storage.tsdb.retention=6h
+          - --config.file=/etc/prometheus/prometheus.yml
+          - --web.listen-address=0.0.0.0:9090
+        ports:
+        - name: web
+          containerPort: 9090
+        env:
+        - name: EXTERNAL_URL
+          value: "http://prometheus.minikube"
+        - name: STORAGE_RETENTION
+          valueFrom:
+            configMapKeyRef:
+              name: prometheus-env
+              key: storage-retention
+        - name: STORAGE_MEMORY_CHUNKS
+          valueFrom:
+            configMapKeyRef:
+              name: prometheus-env
+              key: storage-memory-chunks
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/prometheus
+        - name: rules-volume
+          mountPath: /etc/prometheus-rules
+        - name: etcd-tls-client-certs
+          mountPath: /etc/etcd/ssl
+          readOnly: true
+        - name: prometheus-data
+          mountPath: /prometheus
+      volumes:
+      - name: config-volume
+        configMap:
+          name: prometheus-configmap
+      - name: rules-volume
+        configMap:
+          name: prometheus-rules
+      - name: etcd-tls-client-certs
+        secret:
+          secretName: etcd-tls-client-certs
+        #hostPath:
+        #  path: /etc/ssl/etcd/
+      - name: prometheus-data
+        emptyDir: {}
+      serviceAccountName: prometheus
+      #- name: prometheus-data
+      #  rbd:
+      #    fsType: ext4
+      #    image: prometheus-data
+      #    keyring: /etc/ceph/keyring
+      #    monitors:
+      #    - ceph-mon.ceph.svc.cluster.local
+      #    pool: rbd
+      #    secretRef:
+      #      name: ceph-secret
+      #    user: admin

@@ -1,0 +1,76 @@
+---
+# tasks file for prometheus
+
+- name: Create Prometheus namespace
+  shell: "{{ bin_dir }}/kubectl create namespace monitoring -o yaml --dry-run | {{ bin_dir }}/kubectl apply -f -"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Copy Prometheus template files
+  template:
+    src: '{{ item }}'
+    dest: /tmp/{{ item | basename }}
+  with_fileglob:
+    - "templates/*.yaml"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Generate ETCD secret
+  shell: "{{ bin_dir }}/kubectl --namespace=monitoring create secret generic --from-file=ca.pem=/etc/ssl/etcd/ssl/ca.pem --from-file=client.pem=/etc/ssl/etcd/ssl/admin-master-01.pem --from-file=client-key.pem=/etc/ssl/etcd/ssl/admin-master-01-key.pem etcd-tls-client-certs -o yaml --dry-run > /tmp/etcd-tls-client-certs.yaml"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Generate ETCD secret
+  shell: "{{ bin_dir }}/kubectl --namespace=monitoring apply -f /tmp/etcd-tls-client-certs.yaml"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Copy Prometheus rules
+  copy:
+    src: prometheus-rules
+    dest: /tmp/
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Copy Prometheus config
+  copy:
+    src: prometheus.yml
+    dest: /tmp/
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Generate Prometheus rules configmap
+  shell: "{{ bin_dir }}/kubectl --namespace=monitoring create configmap prometheus-rules --from-file=/tmp/prometheus-rules -o yaml --dry-run > /tmp/prometheus-rules.tmp"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Instanciate Prometheus rules
+  shell: "{{ bin_dir }}/kubectl --namespace=monitoring apply -f /tmp/prometheus-rules.tmp"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Generate Prometheus configmap
+  shell: "{{ bin_dir }}/kubectl --namespace=monitoring create configmap prometheus-configmap --from-file=/tmp/prometheus.yml -o yaml --dry-run > /tmp/prometheus-configmap.tmp"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Instanciate Prometheus configmap
+  shell: "{{ bin_dir }}/kubectl --namespace=monitoring apply -f /tmp/prometheus-configmap.tmp"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Instanciate Prometheus env, services and configuration
+  command: "{{ bin_dir }}/kubectl --namespace=monitoring apply -f /tmp/{{ item }}"
+  with_items:
+    - "prometheus-env.yaml"
+    - "prometheus-svc.yaml"
+    - "prometheus-rbac.yaml"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Instanciate Prometheus deployment
+  command: "{{ bin_dir }}/kubectl --namespace=monitoring apply -f /tmp/{{ item }}"
+  with_items:
+    - "prometheus-deployment.yaml"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true

@@ -1,0 +1,22 @@
+---
+# tasks file for traefik
+
+- name: Copy Traefik template files
+  template:
+    src: '{{ item }}'
+    dest: /tmp/{{ item }}
+  with_items:
+    - "traefik-deployment.yaml"
+    - "traefik-rbac.yaml"
+    - "ui.yaml"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Traefik | Create Kubernetes resources
+  command: "{{ bin_dir }}/kubectl apply -f /tmp/{{ item }}"
+  with_items:
+    - "traefik-deployment.yaml"
+    - "traefik-rbac.yaml"
+    - "ui.yaml"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
