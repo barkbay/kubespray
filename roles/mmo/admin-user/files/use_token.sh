@@ -1,0 +1,6 @@
+#!/bin/bash -x
+
+kubectl config set-credentials mmo/minikube --token $(cat $HOME/minikube.token) && \
+kubectl config set-cluster minikube --insecure-skip-tls-verify=true --server=https://192.168.56.10:6443 && \
+kubectl config set-context default/minikube/mmo --user=mmo/minikube --namespace=default --cluster=minikube && \
+kubectl config use-context default/minikube/mmo

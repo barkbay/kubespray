@@ -9,5 +9,6 @@
     ansible_ssh_pipelining: false
   roles:
     - { role: kubespray-defaults}
+    - { role: mmo/admin-user, tags: root}
     - { role: mmo/traefik, tags: traefik}
     - { role: mmo/prometheus, tags: prometheus}
