@@ -1,2 +1,62 @@
 ---
 # tasks file for hpa
+
+- name: Create custom metrics namespace
+  shell: "{{ bin_dir }}/kubectl create namespace custom-metrics -o yaml --dry-run | {{ bin_dir }}/kubectl apply -f -"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Create temp directory for doing work in on target
+  command: mktemp -td hpa-demo-XXXXXX
+  register: mktemp
+  changed_when: False
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- set_fact:
+    tempdir: "{{ mktemp.stdout }}"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Create templates subdirectory
+  file:
+    state: directory
+    path: "{{ tempdir }}/templates"
+    mode: 0755
+  changed_when: False
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Copy not_so_secret.yaml
+  copy:
+    src: not_so_secret.yaml
+    dest: "{{ tempdir }}/not_so_secret.yaml"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Createa a not so secret secret
+  shell: "{{ bin_dir }}/kubectl --namespace=custom-metrics apply -f {{ tempdir }}/not_so_secret.yaml"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Copy custom metrics template files
+  template:
+    src: '{{ item }}'
+    dest: "{{ tempdir }}/templates/{{ item | basename }}"
+  with_fileglob:
+    - "templates/*.yaml"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Apply HPA configuration and deployment
+  shell: "{{ bin_dir }}/kubectl apply -f {{ tempdir }}/templates/"
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true
+
+- name: Delete temp directory
+  file:
+    name: "{{ tempdir }}"
+    state: absent
+  changed_when: False
+  delegate_to: "{{ groups['kube-master'][0] }}"
+  run_once: true

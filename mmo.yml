@@ -12,3 +12,8 @@
     - { role: mmo/admin-user, tags: root}
     - { role: mmo/traefik, tags: traefik}
     - { role: mmo/prometheus, tags: prometheus}
+
+- hosts: kube-master
+  gather_facts: false
+  roles:
+   - { role: mmo/hpa, tags: hpa}
